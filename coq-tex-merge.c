@@ -77,7 +77,8 @@ static char *translate(int c) {
 }
 
 static unsigned char delay_buf[4];
-static int  delay_n = 0;
+static int delay_n = 0;
+
 static int delay_putc(unsigned char c, FILE *o) { /* only works with one FILE at a time */
   int ret = 0;
   if (delay_n == sizeof delay_buf) {
@@ -88,6 +89,10 @@ static int delay_putc(unsigned char c, FILE *o) { /* only works with one FILE at
   delay_buf[delay_n++] = c;
   return ret;
 }
+
+static void delay_puts(const char *q, FILE *o) {
+     for (; *q; q++) delay_putc(*q,o);
+     }
 
 static void delay_clear() {
   delay_n = 0;
@@ -101,8 +106,8 @@ static int delay_flush(FILE *o) {
   return r;
 }
 
-static int passverbatim(unsigned char *s, FILE *f, FILE *o) {
-     unsigned char *p;
+static int passverbatim(const unsigned char * const s, FILE *f, FILE *o, const char *prefix) {
+     const unsigned char *p;
      int c;
      int column = 0;
      fputs("\\beginOutput\n",stdout);
@@ -113,7 +118,7 @@ static int passverbatim(unsigned char *s, FILE *f, FILE *o) {
 	       p++;
 	       }
 	  else {
-	       unsigned char *q;
+	       const unsigned char *q;
 	       for (q=s; q<p; q++) {
 		 delay_putc(*q,o);
 		 column++;
@@ -135,6 +140,7 @@ static int passverbatim(unsigned char *s, FILE *f, FILE *o) {
 			 column += 4;
 			 }
 		    else if (column < LINEWIDTH) {
+			 if (column == 0 && prefix != NULL) delay_puts(prefix,stdout);
 			 delay_putc(c,stdout);
 			 column++;
 			 }
@@ -220,12 +226,12 @@ int main(int argc, char **argv) {
      while (true) {
      	  int c = pass(delim1,TeXinfile,stdout);
 	  if (c == EOF) exit(0);
-	  c = passverbatim(delim2,TeXinfile,NULL);
+	  c = passverbatim(delim2,TeXinfile,NULL,"   Coq < ");
 	  if (c == EOF) {
 	       error("end of file reached within program input");
 	       exit(1);
 	       }
-	  passverbatim((unsigned char *)"Coq < ",infile,stdout);
+	  passverbatim((unsigned char *)"Coq < ",infile,stdout,"   ");
 	  pass((unsigned char *)"\371",infile,NULL);
 	  neednewline = true;
 	  }
