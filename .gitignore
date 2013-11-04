@@ -1,0 +1,11 @@
+coq-tex-merge
+coq-tex-process
+*.dvi
+*.log
+*.tmp
+*.vo
+*.old
+*.glob
+*-coq.tex
+*.coq-output
+*-tmp.v
