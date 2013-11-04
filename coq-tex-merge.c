@@ -8,8 +8,12 @@
 
 typedef int bool;
 
-static unsigned char delim1[] = "<<<";
-static unsigned char delim2[] = ">>>";
+static char delim1[] = "<<<";
+static char delim2[] = ">>>";
+
+static unsigned char tochar(signed char x) {
+     return (signed char)x;
+     }
 
 static char *progname;
 
@@ -76,10 +80,10 @@ static char *translate(int c) {
   return r;
 }
 
-static unsigned char delay_buf[4];
+static char delay_buf[4];
 static int delay_n = 0;
 
-static int delay_putc(unsigned char c, FILE *o) { /* only works with one FILE at a time */
+static int delay_putc(char c, FILE *o) { /* only works with one FILE at a time */
   int ret = 0;
   if (delay_n == sizeof delay_buf) {
     ret = fputs(translate((int)delay_buf[0]),o);
@@ -106,19 +110,20 @@ static int delay_flush(FILE *o) {
   return r;
 }
 
-static int passverbatim(const unsigned char * const s, FILE *f, FILE *o, const char *prefix) {
-     const unsigned char *p;
+static int passverbatim(const char * const s, FILE *f, FILE *o, const char *prefix) {
+     const char *p;
      int c;
      int column = 0;
      fputs("\\beginOutput\n",stdout);
      for (p=s; *p;) {
 	  c = getc(f);
 	  if (c == EOF) break;
+	  c = tochar(c);
 	  if (*p == c) {
 	       p++;
 	       }
 	  else {
-	       const unsigned char *q;
+	       const char *q;
 	       for (q=s; q<p; q++) {
 		 delay_putc(*q,o);
 		 column++;
@@ -157,8 +162,8 @@ static int passverbatim(const unsigned char * const s, FILE *f, FILE *o, const c
 void trap(){
      }
 
-int pass(unsigned char *s, FILE *f, FILE *o) {
-     unsigned char *p;
+int pass(char *s, FILE *f, FILE *o) {
+     char *p;
      int c;
      # ifdef DEBUG
      fprintf(stderr, "looking for '%s'\n", s);
@@ -166,12 +171,13 @@ int pass(unsigned char *s, FILE *f, FILE *o) {
      for (p=s; *p;) {
 	  c = getc(f);
 	  if (c == EOF) return EOF;
+	  c = tochar(c);
 	  if (*p == c) {
 	       p++;
 	       }
 	  else {
 	       if (o != NULL) {
-	       	    unsigned char *q;
+	       	    char *q;
 	       	    for (q=s; q<p; q++) {
 			 putc(*q,o);
 			 # ifdef DEBUG
@@ -222,7 +228,7 @@ int main(int argc, char **argv) {
 	  exit(1);
 	  }
      fputs("\\input merge.tex\n",stdout);
-     pass((unsigned char *)"\371",infile,NULL);
+     pass("\371",infile,NULL);
      while (true) {
      	  int c = pass(delim1,TeXinfile,stdout);
 	  if (c == EOF) exit(0);
@@ -231,8 +237,8 @@ int main(int argc, char **argv) {
 	       error("end of file reached within program input");
 	       exit(1);
 	       }
-	  passverbatim((unsigned char *)"Coq < ",infile,stdout,"   ");
-	  pass((unsigned char *)"\371",infile,NULL);
+	  passverbatim("Coq < ",infile,stdout,"   ");
+	  pass("\371",infile,NULL);
 	  neednewline = true;
 	  }
      }
